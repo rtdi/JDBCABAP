@@ -8,37 +8,64 @@ import java.util.List;
 import java.util.Map;
 
 import io.rtdi.jdbcabap.parser.ProjectionColumn;
-import io.rtdi.jdbcabap.parser.ValueExpression;
 
+/**
+ * Implements a ResultSetMetaData
+ */
 public class SimpleResultSetMetadata implements ResultSetMetaData {
+	/**
+	 * All fields of the result set
+	 */
 	protected List<ProjectionColumn> fields;
 	private Map<String, Integer> nameindex;
 	private String tablename;
 
+	/**
+	 * create a new POJO
+	 */
 	public SimpleResultSetMetadata() {
 	}
 
+	/**
+	 * @return table name the result set belongs to
+	 */
 	public String getTablename() {
 		return tablename;
 	}
 
+	/**
+	 * @return fields of the result set
+	 */
 	public List<ProjectionColumn> getFields() {
 		return fields;
 	}
 
-	public void setTablename(String text) {
-		this.tablename = text;
+	/**
+	 * @param tablename of the resultset
+	 */
+	public void setTablename(String tablename) {
+		this.tablename = tablename;
 	}
 
+	/**
+	 * Clear all fields of the result set
+	 */
 	public void init() {
 		fields = null;
 		nameindex = null;
 	}
 	
+	/**
+	 * @param columnname to search for
+	 * @return the 0 based index where the column can be found, null if not found
+	 */
 	public Integer getColumnPositionByName(String columnname) {
 		return nameindex.get(columnname);
 	}
 	
+	/**
+	 * @return the last field added to the resultset or null of there are none yet
+	 */
 	public ProjectionColumn getLastColumn() {
 		if (fields != null && fields.size() > 0) {
 			return fields.get(fields.size()-1);
@@ -47,6 +74,9 @@ public class SimpleResultSetMetadata implements ResultSetMetaData {
 		}
 	}
 
+	/**
+	 * @param columnExpression to be added to the result set
+	 */
 	public void addColumn(ProjectionColumn columnExpression) {
 		if (fields == null) {
 			fields = new ArrayList<>();
@@ -56,7 +86,11 @@ public class SimpleResultSetMetadata implements ResultSetMetaData {
 		nameindex.put(columnExpression.getColumnname(), nameindex.size());
 	}
 
-	public ValueExpression getColumn(int index) {
+	/**
+	 * @param index is the 0 based position of the field
+	 * @return the ProjectionColumn at the 0 based index
+	 */
+	public ProjectionColumn getColumn(int index) {
 		return fields.get(index);
 	}
 

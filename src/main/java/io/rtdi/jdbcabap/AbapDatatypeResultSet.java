@@ -8,10 +8,18 @@ import java.util.List;
 import io.rtdi.jdbcabap.parser.ProjectionColumn;
 import io.rtdi.jdbcabap.sql.SimpleResultSetMetadata;
 
+/**
+ * ResultSet and metadata returned by the database metadata object
+ */
 public class AbapDatatypeResultSet extends AbapResultSet {
 	
 	private static List<Object[]> data;
 	private static SimpleResultSetMetadata rsmetadata;
+	
+	/**
+	 * Instance of the class
+	 */
+	public static final AbapDatatypeResultSet INSTANCE = new AbapDatatypeResultSet();
 
 	static {
 		
@@ -159,7 +167,7 @@ public class AbapDatatypeResultSet extends AbapResultSet {
 		// type = JDBCType.NCLOB;
 	}
 
-	public AbapDatatypeResultSet() {
+	private AbapDatatypeResultSet() {
 		super(rsmetadata, data);
 	}
 

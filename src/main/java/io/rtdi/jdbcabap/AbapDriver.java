@@ -9,10 +9,16 @@ import java.sql.SQLFeatureNotSupportedException;
 import java.util.Properties;
 import java.util.logging.Logger;
 
+/**
+ * Driver implementation for Abap
+ */
 public class AbapDriver implements Driver {
 	private static final Driver INSTANCE = new AbapDriver();
 	private static boolean registered;
 	
+	/**
+	 * Creates a new driver instance
+	 */
 	public AbapDriver() {
 		super();
 		JdbcDestinationDataProvider.register();
@@ -53,6 +59,11 @@ public class AbapDriver implements Driver {
 		return null;
 	}
 
+	/**
+	 * Does register the instance in the DriverManager if not already done and returns the instance
+	 * 
+	 * @return the instance of the driver
+	 */
 	public static synchronized Driver load() {
 		if (!registered) {
 			registered = true;

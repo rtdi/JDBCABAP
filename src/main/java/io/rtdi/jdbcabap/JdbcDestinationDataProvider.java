@@ -38,6 +38,17 @@ public class JdbcDestinationDataProvider implements DestinationDataProvider {
 		return true;
 	}
 
+	/**
+	 * Create a new connection using the provided info
+	 * 
+	 * @param host hostname or IP
+	 * @param systemno as two digit string
+	 * @param client as three digit string
+	 * @param user in Abap
+	 * @param passwd of the Abap user
+	 * @param lang language of the connection
+	 * @return the identifier of the connection
+	 */
 	public static String createConnection(String host, String systemno, String client, String user, String passwd, String lang) {
 		synchronized (connectionprops) {
 			String name = String.valueOf(connectioncounter++);
@@ -58,6 +69,11 @@ public class JdbcDestinationDataProvider implements DestinationDataProvider {
 		}
 	}
 	
+	/**
+	 * Removes a connection from the pool
+	 * 
+	 * @param name is the identifier returned by {@link #createConnection(String, String, String, String, String, String)}
+	 */
 	public static void removeConnection(String name) {
 		synchronized (connectionprops) {
 			if (connectionprops.containsKey(name)) {
@@ -69,6 +85,9 @@ public class JdbcDestinationDataProvider implements DestinationDataProvider {
 		}
 	}
 	
+	/**
+	 * Terminates all connections
+	 */
 	public static void close() {
 		Iterator<String> iter = connectionprops.keySet().iterator();
 		while (iter.hasNext()) {
@@ -76,6 +95,13 @@ public class JdbcDestinationDataProvider implements DestinationDataProvider {
 		}
 	}
 
+	/**
+	 * Executes a ping against the target to validate the connection was established successfully
+	 * 
+	 * @param name is the identifier as returned by {@link #createConnection(String, String, String, String, String, String)}
+	 * @return true or throws an exception
+	 * @throws SQLException in case the identifier was wrong or the target system cannot be reached
+	 */
 	public static boolean validate(String name) throws SQLException {
 		try {
 			JCoDestination dest = JCoDestinationManager.getDestination(name);
@@ -90,6 +116,9 @@ public class JdbcDestinationDataProvider implements DestinationDataProvider {
 		}
 	}
 	
+	/**
+	 * Add this destination provider to the registry
+	 */
 	public static void register() {
 		JdbcDestinationDataProvider provider = new JdbcDestinationDataProvider();
 		try {
@@ -99,11 +128,18 @@ public class JdbcDestinationDataProvider implements DestinationDataProvider {
 		}
 	}
 	
+	/**
+	 * Returns the JCoDestination for a given identifier
+	 * 
+	 * @param name is the identifier of the connection
+	 * @return JCoDestination of this connection
+	 * @throws SQLException if the name is not known
+	 */
 	public static JCoDestination getJCoDestination(String name) throws SQLException {
 		try {
 			return JCoDestinationManager.getDestination(name);
 		} catch (JCoException e) {
-			throw new SQLException("Cannot get the JCo destination with name " + name, e);
+			throw new SQLException("Cannot get the JCoDestination with name " + name, e);
 		}
 	}
 }

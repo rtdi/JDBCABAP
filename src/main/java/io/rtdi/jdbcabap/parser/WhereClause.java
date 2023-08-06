@@ -6,12 +6,19 @@ import java.util.List;
 
 import io.rtdi.jdbcabap.AbapDataType;
 import io.rtdi.jdbcabap.AbapTableMetadata;
+import io.rtdi.jdbcabap.parser.AndOr.AndOrOp;
 
-public class WhereClause implements Expression, WithParent {
-	private Expression left;
+/**
+ * A clause with a left expression and a list of right expressions AND/ORed together
+ */
+public class WhereClause implements Condition, WithParent {
+	private Condition left;
 	private List<AndOr> right;
 	private BracketExpression parent;
 
+	/**
+	 * @param parent of the where expression or null for the root
+	 */
 	public WhereClause(BracketExpression parent) {
 		this.parent = parent;
 	}
@@ -21,7 +28,11 @@ public class WhereClause implements Expression, WithParent {
 		return parent;
 	}
 
-	public void add(Expression expr) {
+	/**
+	 * Add another expression - first call goes to the left expression, all others wrap it into an AndOr element and add it to the right list
+	 * @param expr Condition
+	 */
+	public void add(Condition expr) {
 		if (left == null) {
 			left = expr;
 		} else {
@@ -30,7 +41,7 @@ public class WhereClause implements Expression, WithParent {
 		}
 	}
 	
-	public void addOperator(String op) {
+	public void addOperator(AndOrOp op) {
 		if (right == null) {
 			right = new ArrayList<>();
 		}
@@ -52,7 +63,7 @@ public class WhereClause implements Expression, WithParent {
 	}
 
 	@Override
-	public void updateMetadata(AbapTableMetadata tablemetadata) throws SQLException {
+	public void updateMetadata(List<AbapTableMetadata> tablemetadata) throws SQLException {
 		if (left != null) {
 			left.updateMetadata(tablemetadata);
 		}
@@ -63,6 +74,14 @@ public class WhereClause implements Expression, WithParent {
 		}
 	}
 
+	/**
+	 * Derive from the input string and the data type the true string to be used for this value.
+	 * Example: a date column with the value null is represented by the string 00000000
+	 * @param dt data type of the value
+	 * @param value the value text representation as provided by the user
+	 * @return the internal text representation as required by ABAP
+	 * @throws SQLException in case of incompatibilities
+	 */
 	public static String validateStringWithDatatype(AbapDataType dt, String value) throws SQLException {
 		if (dt == null) {
 			return value;

@@ -1,5 +1,8 @@
 package io.rtdi.jdbcabap.parser;
 
+/**
+ * All possible values SAP data dictionary know for the TABCLASS
+ */
 public enum TabClass {
 	
 	/*
@@ -23,10 +26,17 @@ public enum TabClass {
 		this.type = type;
 	}
 
+	/**
+	 * @return the equivalent jdbc table type for this TABCLASS
+	 */
 	public JdbcTableTypes getType() {
 		return type;
 	}
 	
+	/**
+	 * @param type is the jdbc table type to search for
+	 * @return all TABLASS values to be returned to produce the data
+	 */
 	public static TabClass[] allFor(JdbcTableTypes type) {
 		switch (type) {
 		case TABLE: return new TabClass[] {TRANSP, CLUSTER, POOL};

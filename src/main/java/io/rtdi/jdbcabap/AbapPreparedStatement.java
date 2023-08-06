@@ -21,16 +21,29 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.List;
 
 import io.rtdi.jdbcabap.sql.SQL;
 
+/**
+ * PreparedStatement implementation for Abap
+ */
 public class AbapPreparedStatement extends AbapStatement implements PreparedStatement {
 
+	/**
+	 * Creates a new PreparedStatement for the given connection and sql text
+	 * 
+	 * @param connection of the PreparedStatement
+	 * @param sqltext to prepare
+	 * @throws SQLException in case of errors in the sql text
+	 */
 	AbapPreparedStatement(AbapConnection connection, String sqltext) throws SQLException {
 		super(connection);
 		sql = new SQL(sqltext);
-    	AbapTableMetadata tablemetadata = AbapTableMetadata.get(sql.getTablename(), connection);
+		List<AbapTableMetadata> tablemetadata = new ArrayList<>();
+		tablemetadata.add(AbapTableMetadata.get(sql.getTablename(), connection));
     	sql.updateMetadata(tablemetadata);
 	}
 

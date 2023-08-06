@@ -11,8 +11,10 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 
 import io.rtdi.jdbcabap.AbapColumn;
+import io.rtdi.jdbcabap.AbapDataType;
 import io.rtdi.jdbcabap.AbapTableMetadata;
 import io.rtdi.jdbcabap.parser.ColumnExpression;
+import io.rtdi.jdbcabap.parser.Expression;
 import io.rtdi.jdbcabap.parser.Parameter;
 import io.rtdi.jdbcabap.parser.ProjectionColumn;
 import io.rtdi.jdbcabap.parser.SqlAbapStatementListener;
@@ -20,13 +22,21 @@ import io.rtdi.jdbcabap.parser.WhereClause;
 import io.rtdi.jdbcabap.parser.antlr.SqlAbapLexer;
 import io.rtdi.jdbcabap.parser.antlr.SqlAbapParser;
 
-public class SQL extends SimpleResultSetMetadata {
+/**
+ * An object tree representing the SQL statement
+ */
+public class SQL extends SimpleResultSetMetadata implements Expression {
 	private WhereClause whereclause;
 	private Integer limit;
 	private Integer offset;
 	private AbapParameterMetaData parametermetadata;
 	private List<Parameter> parameters;
 
+	/**
+	 * Create the object tree for the provided SQL statement - no validation of column names at this point in time, just validating the syntax requirements
+	 * @param sqltext is the free form statement
+	 * @throws SQLException in case of any parsing issues
+	 */
 	public SQL(String sqltext) throws SQLException {
 		try {
 			SqlAbapLexer lexer = new SqlAbapLexer(CharStreams.fromString(sqltext));
@@ -45,6 +55,9 @@ public class SQL extends SimpleResultSetMetadata {
 		}
 	}
 	
+	/**
+	 * @return the where clause or null
+	 */
 	public String getWhereClause() {
 		if (whereclause != null) {
 			return whereclause.toString();
@@ -53,22 +66,26 @@ public class SQL extends SimpleResultSetMetadata {
 		}
 	}
 
+	@Override
 	public void init() {
 		super.init();
 		whereclause = null;
 	}
 	
-	public void updateMetadata(AbapTableMetadata tablemetadata) throws SQLException {
+	@Override
+	public void updateMetadata(List<AbapTableMetadata> tablemetadata) throws SQLException {
 		if (fields != null) {
 			int pos = 0;
 			if (fields.size() == 1 && fields.get(0).getText().equals("*")) {
 				fields.clear();
-				for (AbapColumn columnmetadata : tablemetadata.getFields()) {
-					ColumnExpression f = new ColumnExpression(columnmetadata.getColumnname());
-					ProjectionColumn projection = new ProjectionColumn(f, columnmetadata.getColumnname(), pos);
-					projection.updateMetadata(tablemetadata);
-					fields.add(projection);
-					pos++;
+				for (AbapTableMetadata table : tablemetadata) {
+					for (AbapColumn columnmetadata : table.getFields()) {
+						ColumnExpression f = new ColumnExpression(columnmetadata.getColumnname());
+						ProjectionColumn projection = new ProjectionColumn(f, columnmetadata.getColumnname(), pos);
+						projection.updateMetadata(tablemetadata);
+						fields.add(projection);
+						pos++;
+					}
 				}
 			} else {
 				for(ProjectionColumn f : fields) {
@@ -81,22 +98,37 @@ public class SQL extends SimpleResultSetMetadata {
 		}
 	}
 	
+	/**
+	 * @param text for the limit clause, converted to an integer
+	 */
 	public void setLimit(String text) {
 		this.limit = Integer.parseInt(text);
 	}
 
+	/**
+	 * @param text for the offset clause, converted to an integer
+	 */
 	public void setOffset(String text) {
 		this.offset = Integer.parseInt(text);
 	}
 
+	/**
+	 * @return limit clause value or null if there was none
+	 */
 	public Integer getLimit() {
 		return limit;
 	}
 
+	/**
+	 * @return offset clause value or null if there was none
+	 */
 	public Integer getOffset() {
 		return offset;
 	}
 
+	/**
+	 * @param w whereclause to be used by this SQL tree
+	 */
 	public void setWhereClause(WhereClause w) {
 		this.whereclause = w;
 	}
@@ -122,6 +154,12 @@ public class SQL extends SimpleResultSetMetadata {
 		return String.format("select %s from %s%s", fieldlist, getTablename(), where);
 	}
 
+	/**
+	 * Called right before the execution to provide values to the statement
+	 * @param index 1 based position of the parameter
+	 * @param value for the parameter
+	 * @throws SQLException in case the parameter data type and the value do not match
+	 */
 	public void setParameter(int index, String value) throws SQLException {
 		if (parameters == null) {
 			throw new SQLException("SQL statement has no parameters");
@@ -132,6 +170,9 @@ public class SQL extends SimpleResultSetMetadata {
 		}
 	}
 
+	/**
+	 * @return metadata object for the parameters
+	 */
 	public ParameterMetaData getParameterMetadata() {
 		if (parametermetadata == null) {
 			parametermetadata = new AbapParameterMetaData(parameters);
@@ -139,8 +180,28 @@ public class SQL extends SimpleResultSetMetadata {
 		return parametermetadata;
 	}
 
+	/**
+	 * Setter for all parameters
+	 * @param parameters list to be set to
+	 */
 	public void setParameters(List<Parameter> parameters) {
 		this.parameters = parameters;
+	}
+
+	/**
+	 * Sets the exact data type of the field at position, for those cases where it might not be known, e.g. select NULL as COL1 ...
+	 * @param pos 1 based position
+	 * @param dt datatype to be used
+	 * @throws SQLException in case the position is out of range or the data type does not match the value
+	 */
+	public void setDataType(int pos, AbapDataType dt) throws SQLException {
+		if (fields != null) {
+			if (pos > 0 && pos <= fields.size()) {
+				fields.get(pos-1).setDatatype(dt);
+			} else {
+				throw new SQLException(String.format("SQL has %d columns but the provided position is %d, must be between 1 and %d", fields.size(), pos, fields.size()));
+			}
+		}
 	}
 
 }

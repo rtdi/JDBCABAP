@@ -5,8 +5,14 @@ import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Recognizer;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 
+/**
+ * A singleton class of an parser error handler
+ */
 public class ErrorHandler extends BaseErrorListener {
 
+	/**
+	 * Provides access to the ErrorHandler object
+	 */
 	public static final ErrorHandler INSTANCE = new ErrorHandler();
 
 	@Override

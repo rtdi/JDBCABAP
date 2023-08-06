@@ -8,7 +8,13 @@ import java.sql.ResultSetMetaData;
 import java.sql.RowIdLifetime;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.regex.Pattern;
+
+import com.sap.conn.jco.JCoException;
+import com.sap.conn.jco.JCoFunction;
+import com.sap.conn.jco.JCoTable;
 
 import io.rtdi.jdbcabap.parser.ColumnExpression;
 import io.rtdi.jdbcabap.parser.JdbcTableTypes;
@@ -16,10 +22,16 @@ import io.rtdi.jdbcabap.parser.ProjectionColumn;
 import io.rtdi.jdbcabap.parser.TabClass;
 import io.rtdi.jdbcabap.sql.SimpleResultSetMetadata;
 
+/**
+ * Implementation of the DatabaseMetaData
+ */
 public class AbapDatabaseMetaData implements DatabaseMetaData {
 
 	private AbapConnection conn;
 
+	/**
+	 * @param conn connection this metadata object belongs to
+	 */
 	public AbapDatabaseMetaData(AbapConnection conn) {
 		this.conn = conn;
 	}
@@ -341,7 +353,7 @@ public class AbapDatabaseMetaData implements DatabaseMetaData {
 
 	@Override
 	public String getProcedureTerm() throws SQLException {
-		return null;
+		return "FUNCTIONMODULE";
 	}
 
 	@Override
@@ -630,14 +642,166 @@ public class AbapDatabaseMetaData implements DatabaseMetaData {
 
 	@Override
 	public ResultSet getProcedures(String catalog, String schemaPattern, String procedureNamePattern) throws SQLException {
-		return null;
+		/*
+			1.PROCEDURE_CAT String => procedure catalog (may be null) 
+			2.PROCEDURE_SCHEM String => procedure schema (may be null) 
+			3.PROCEDURE_NAME String => procedure name 
+			4. reserved for future use 
+			5. reserved for future use 
+			6. reserved for future use 
+			7.REMARKS String => explanatory comment on the procedure 
+			8.PROCEDURE_TYPE short => kind of procedure:
+				◦ procedureResultUnknown - Cannot determine if a return value will be returned 
+				◦ procedureNoResult - Does not return a return value 
+				◦ procedureReturnsResult - Returns a return value 
+			9.SPECIFIC_NAME String => The name which uniquely identifies this procedure within its schema. 
+		 */
+		String sqltext = "select null as PROCEDURE_CAT, null as PROCEDURE_SCHEM, FUNCNAME as PROCEDURE_NAME, null as reserved1, null as reserved2, "
+				+ "null as reserved3, null as REMARKS, null as PROCEDURE_TYPE, FUNCNAME as SPECIFIC_NAME "
+				+ "from V_FDIR where FMODE = 'R' and ACTIVE='X'";
+		if (procedureNamePattern != null) {
+			sqltext += " and FUNCNAME LIKE '" + procedureNamePattern.replace('*', '%') + "'";
+		}
+		try (AbapPreparedStatement stmt = conn.prepareStatement(sqltext)) {
+			stmt.setDataType(1, AbapDataType.C);
+			stmt.setDataType(2, AbapDataType.C);
+			stmt.setDataType(4, AbapDataType.C);
+			stmt.setDataType(5, AbapDataType.C);
+			stmt.setDataType(6, AbapDataType.C);
+			stmt.setDataType(7, AbapDataType.C);
+			stmt.setDataType(8, AbapDataType.I);
+			stmt.setRowTransform(new RowTransformation() {
+				
+				@Override
+				public void apply(Object[] row) {
+					// PROCEDURE_TYPE
+					row[7] = DatabaseMetaData.procedureResultUnknown;
+				}
+			});
+			return stmt.executeQuery();
+		}
 	}
 
 	@Override
 	public ResultSet getProcedureColumns(String catalog, String schemaPattern, String procedureNamePattern, String columnNamePattern) throws SQLException {
-
-		
-		return null;
+		Pattern columnpattern = null;
+		if (columnNamePattern != null) {
+			columnpattern = Pattern.compile(columnNamePattern.replace("*", ".*"));
+		}
+		/*
+			1.PROCEDURE_CAT String => procedure catalog (may be null) 
+			2.PROCEDURE_SCHEM String => procedure schema (may be null) 
+			3.PROCEDURE_NAME String => procedure name 
+			4.COLUMN_NAME String => column/parameter name 
+			5.COLUMN_TYPE Short => kind of column/parameter:
+				◦ procedureColumnUnknown - nobody knows 
+				◦ procedureColumnIn - IN parameter 
+				◦ procedureColumnInOut - INOUT parameter 
+				◦ procedureColumnOut - OUT parameter 
+				◦ procedureColumnReturn - procedure return value 
+				◦ procedureColumnResult - result column in ResultSet 
+			6.DATA_TYPE int => SQL type from java.sql.Types 
+			7.TYPE_NAME String => SQL type name, for a UDT type the type name is fully qualified 
+			8.PRECISION int => precision 
+			9.LENGTH int => length in bytes of data 
+			10.SCALE short => scale - null is returned for data types where SCALE is not applicable. 
+			11.RADIX short => radix 
+			12.NULLABLE short => can it contain NULL.
+				◦ procedureNoNulls - does not allow NULL values 
+				◦ procedureNullable - allows NULL values 
+				◦ procedureNullableUnknown - nullability unknown 
+			13.REMARKS String => comment describing parameter/column 
+			14.COLUMN_DEF String => default value for the column, which should be interpreted as a string when the value is enclosed in single quotes (may be null)
+				◦ The string NULL (not enclosed in quotes) - if NULL was specified as the default value 
+				◦ TRUNCATE (not enclosed in quotes) - if the specified default value cannot be represented without truncation 
+				◦ NULL - if a default value was not specified 
+			15.SQL_DATA_TYPE int => reserved for future use 
+			16.SQL_DATETIME_SUB int => reserved for future use 
+			17.CHAR_OCTET_LENGTH int => the maximum length of binary and character based columns. For any other datatype the returned value is a NULL 
+			18.ORDINAL_POSITION int => the ordinal position, starting from 1, for the input and output parameters for a procedure. A value of 0 is returned if this row describes the procedure's return value. For result set columns, it is the ordinal position of the column in the result set starting from 1. If there are multiple result sets, the column ordinal positions are implementation defined. 
+			19.IS_NULLABLE String => ISO rules are used to determine the nullability for a column.
+				◦ YES --- if the column can include NULLs 
+				◦ NO --- if the column cannot include NULLs 
+				◦ empty string --- if the nullability for the column is unknown 
+			20.SPECIFIC_NAME String => the name which uniquely identifies this procedure within its schema. 
+		 */
+		List<String> procedurenames;
+		if (procedureNamePattern != null && procedureNamePattern.contains("*")) {
+			ResultSet procrs = getProcedures(catalog, schemaPattern, procedureNamePattern);
+			procedurenames = new ArrayList<>();
+			while (procrs.next()) {
+				procedurenames.add(procrs.getString(3));
+			}
+		} else {
+			procedurenames = Collections.singletonList(procedureNamePattern);
+		}
+		try {	
+	        JCoFunction function = conn.getJCoDestination().getRepository().getFunction("RFC_GET_FUNCTION_INTERFACE");
+	        if (function == null) {
+	            throw new SQLException("Function RFC_GET_FUNCTION_INTERFACE not found in SAP");
+	        }
+	        AbapProcedureResultSet rs = new AbapProcedureResultSet();
+	        for (String name : procedurenames) {
+		    	function.getImportParameterList().setValue("FUNCNAME", name);
+		    	function.getImportParameterList().setValue("LANGUAGE", "E");
+		        function.execute(conn.getJCoDestination());
+		    	JCoTable data = function.getTableParameterList().getTable("PARAMS");
+		    	
+		    	for (int i=0; i<data.getNumRows(); i++) {
+		    		boolean skip = false;
+		    		data.setRow(i);
+		    		String parameter = data.getString("PARAMETER");
+		    		if (columnpattern == null || columnpattern.matcher(parameter).matches()) {
+			    		// String paramfieldname = data.getString("FIELDNAME");
+			    		String paramexid = data.getString("EXID");
+			    		int paramprecision = data.getInt("INTLENGTH");
+			    		// String paramdefault = data.getString("DEFAULT");
+			    		int paramtype = DatabaseMetaData.procedureColumnUnknown;
+			    		switch (data.getString("PARAMCLASS")) {
+			    		case "I": paramtype = DatabaseMetaData.procedureColumnIn; break;
+			    		case "E": paramtype = DatabaseMetaData.procedureColumnOut; break;
+			    		case "T": paramtype = DatabaseMetaData.procedureColumnResult; break;
+			    		case "X": skip = true; break;
+			    		default: skip = true; break;
+			    		}
+			    		if (!skip) {
+				    		Object[] row = rs.append();
+				    		row[2] = name;
+				    		row[3] = parameter;
+				    		row[4] = paramtype;
+				    		if (paramexid != null && paramexid.length() != 0) {
+				    			row[5] = AbapDataType.valueOf(paramexid).getJdbcType();
+				    		} else {
+				    			row[5] = AbapDataType.C.getJdbcType(); // should not happen as only import/export/table parameters can be in the paramclass
+				    		}
+				    		if (paramexid.equals(AbapDataType.u.name())) {
+				    			row[6] = data.getString("TABNAME");
+				    		}
+				    		row[7] = paramprecision;
+				    		row[8] = paramprecision;
+				    		row[9] = data.getInt("DECIMALS");
+				    		row[10] = 10;
+				    		if ("X".equals(data.getString("OPTIONAL"))) {
+				    			row[11] = DatabaseMetaData.procedureNullable;
+				    			row[18] = "YES";
+				    		} else {
+				    			row[11] = DatabaseMetaData.procedureNoNulls;
+				    			row[18] = "NO";
+				    		}
+				    		row[12] = data.getString("PARAMTEXT");
+				    		row[14] = row[5];
+				    		row[15] = 0;
+				    		row[16] = paramprecision;
+				    		row[17] = data.getInt("POSITION");
+				    		row[19] = name;
+			    		}
+		    		}
+		    	}
+			}
+	    	return rs;
+	    } catch (JCoException e) {
+	        throw new SQLException("Failed to execute RFC_GET_FUNCTION_INTERFACE", e);
+	    }
 	}
 
 	@Override
@@ -869,7 +1033,12 @@ public class AbapDatabaseMetaData implements DatabaseMetaData {
 				+ "null as FKTABLE_CAT, null as FKTABLE_SCHEM, TABNAME as FKTABLE_NAME, FORKEY as FKCOLUMN_NAME, "
 				+ "PRIMPOS as KEY_SEQ, 0 as UPDATE_RULE, 0 as DELETE_RULE, FIELDNAME as FK_NAME, null as PK_NAME, 0 as DEFERRABILITY "
 				+ "from DD05Q where TABNAME = ? and FORTABLE <> '*'";
-		try (PreparedStatement stmt = conn.prepareStatement(sqltext)) {
+		try (AbapPreparedStatement stmt = conn.prepareStatement(sqltext)) {
+			stmt.setDataType(1, AbapDataType.C);
+			stmt.setDataType(2, AbapDataType.C);
+			stmt.setDataType(5, AbapDataType.C);
+			stmt.setDataType(6, AbapDataType.C);
+			stmt.setDataType(13, AbapDataType.C);
 			stmt.setString(1, table);
 			((AbapStatement) stmt).setRowTransform(new RowTransformation() {
 				
@@ -922,7 +1091,12 @@ public class AbapDatabaseMetaData implements DatabaseMetaData {
 				+ "null as FKTABLE_CAT, null as FKTABLE_SCHEM, TABNAME as FKTABLE_NAME, FORKEY as FKCOLUMN_NAME, "
 				+ "PRIMPOS as KEY_SEQ, 0 as UPDATE_RULE, 0 as DELETE_RULE, FIELDNAME as FK_NAME, null as PK_NAME, 0 as DEFERRABILITY "
 				+ "from DD05Q where CHECKTABLE = ? and FORTABLE <> '*'";
-		try (PreparedStatement stmt = conn.prepareStatement(sqltext)) {
+		try (AbapPreparedStatement stmt = conn.prepareStatement(sqltext)) {
+			stmt.setDataType(1, AbapDataType.C);
+			stmt.setDataType(2, AbapDataType.C);
+			stmt.setDataType(5, AbapDataType.C);
+			stmt.setDataType(6, AbapDataType.C);
+			stmt.setDataType(13, AbapDataType.C);
 			stmt.setString(1, table);
 			((AbapStatement) stmt).setRowTransform(new RowTransformation() {
 				
@@ -976,7 +1150,12 @@ public class AbapDatabaseMetaData implements DatabaseMetaData {
 				+ "null as FKTABLE_CAT, null as FKTABLE_SCHEM, TABNAME as FKTABLE_NAME, FORKEY as FKCOLUMN_NAME, "
 				+ "PRIMPOS as KEY_SEQ, 0 as UPDATE_RULE, 0 as DELETE_RULE, FIELDNAME as FK_NAME, null as PK_NAME, 0 as DEFERRABILITY "
 				+ "from DD05Q where TABNAME = ? and CHECKTABLE = ? and FORTABLE <> '*'";
-		try (PreparedStatement stmt = conn.prepareStatement(sqltext)) {
+		try (AbapPreparedStatement stmt = conn.prepareStatement(sqltext)) {
+			stmt.setDataType(1, AbapDataType.C);
+			stmt.setDataType(2, AbapDataType.C);
+			stmt.setDataType(5, AbapDataType.C);
+			stmt.setDataType(6, AbapDataType.C);
+			stmt.setDataType(13, AbapDataType.C);
 			stmt.setString(1, parentTable);
 			stmt.setString(2, foreignTable);
 			((AbapStatement) stmt).setRowTransform(new RowTransformation() {
@@ -995,7 +1174,7 @@ public class AbapDatabaseMetaData implements DatabaseMetaData {
 
 	@Override
 	public ResultSet getTypeInfo() throws SQLException {
-		return new AbapDatatypeResultSet();
+		return AbapDatatypeResultSet.INSTANCE;
 	}
 
 	@Override
@@ -1187,13 +1366,11 @@ public class AbapDatabaseMetaData implements DatabaseMetaData {
 
 	@Override
 	public ResultSet getFunctions(String catalog, String schemaPattern, String functionNamePattern) throws SQLException {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
 	public ResultSet getFunctionColumns(String catalog, String schemaPattern, String functionNamePattern, String columnNamePattern) throws SQLException {
-		// TODO Auto-generated method stub
 		return null;
 	}
 

@@ -24,7 +24,10 @@ class ReadTestIT {
 	@BeforeAll
 	static void setUpBeforeClass() throws Exception {
 		try {
-			conn = DriverManager.getConnection("jdbc:abap://54.160.1.238:00:001", "DEVELOPER", "qrpXW32Wks9Fb5");
+			String jdbcurl = System.getenv("jdbcurl");
+			String user = System.getenv("user");
+			String password = System.getenv("password");
+			conn = DriverManager.getConnection(jdbcurl, user, password);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -222,7 +225,23 @@ class ReadTestIT {
 			while (rs.next()) {
 				tables.add(rs.getString(3));
 			}
-			System.out.print("Search for tables with pattern DD02%: ");
+			System.out.print("Search for tables with pattern DD02*: ");
+			System.out.println(tables);
+		} catch (Exception e) {
+			e.printStackTrace();
+			fail("Exception thrown");
+		}
+	}
+
+	@Test
+	void testGetProcedures() {
+		try {
+			ResultSet rs = conn.getMetaData().getProcedures(null, null, "RFC*");
+			List<String> tables = new ArrayList<>();
+			while (rs.next()) {
+				tables.add(rs.getString(3));
+			}
+			System.out.print("Search for RFC enabled function modules with pattern RFC*: ");
 			System.out.println(tables);
 		} catch (Exception e) {
 			e.printStackTrace();

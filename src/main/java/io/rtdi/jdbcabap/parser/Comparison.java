@@ -1,13 +1,40 @@
 package io.rtdi.jdbcabap.parser;
 
+/**
+ * All supported comparison operators
+ */
 public enum Comparison {
+	/**
+	 * equal
+	 */
 	EQ,
+	/**
+	 * not equal
+	 */
 	NOT_EQ,
+	/**
+	 * less than
+	 */
 	LT,
+	/**
+	 * greater than
+	 */
 	GT,
+	/**
+	 * less or equal
+	 */
 	LE,
+	/**
+	 * greater or equal
+	 */
 	GE,
+	/**
+	 * like
+	 */
 	LIKE,
+	/**
+	 * yet unknown comparison operand, needed for sequential parsing
+	 */
 	NONE;
 
 	static Comparison of(String text) {

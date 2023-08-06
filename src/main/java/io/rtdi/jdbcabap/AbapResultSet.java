@@ -34,9 +34,18 @@ import java.util.Map;
 import io.rtdi.jdbcabap.sql.SQL;
 import io.rtdi.jdbcabap.sql.SimpleResultSetMetadata;
 
+/**
+ * Implements a ResultSet
+ */
 public class AbapResultSet implements ResultSet {
 
+	/**
+	 * Formatter for all date related values
+	 */
 	public static final DateTimeFormatter formatteryyyymmdd = DateTimeFormatter.ofPattern("yyyyMMdd");
+	/**
+	 * Formatter for all time related values
+	 */
 	public static final DateTimeFormatter formatterhhmmss = DateTimeFormatter.ofPattern("HHmmss");
 	private SimpleResultSetMetadata resultsetmetadata;
 	private List<Object[]> data;
@@ -45,11 +54,21 @@ public class AbapResultSet implements ResultSet {
 	private Object[] currentrow = null;
 	private Statement statement;
 
+	/**
+	 * Create a resultset for a given SQL statement as metadata and statement
+	 * @param sql the resultsetmetadata
+	 * @param stmt this resultset belongs to
+	 */
 	public AbapResultSet(SQL sql, AbapStatement stmt) {
 		this.resultsetmetadata = sql;
 		this.statement = stmt;
 	}
 
+	/**
+	 * Result set with explicit metadata and data - used mostly for database metadata objects
+	 * @param metadata of the result set
+	 * @param data containing the rows or will contain the rows
+	 */
 	public AbapResultSet(SimpleResultSetMetadata metadata, List<Object[]> data) {
 		this.resultsetmetadata = metadata;
 		this.data = data;
@@ -1127,6 +1146,12 @@ public class AbapResultSet implements ResultSet {
 		return false;
 	}
 
+	/**
+	 * Add a new row to the result set and return it, so the caller can fill in the values
+	 * 
+	 * @return a new Object[] to be used to store the row values
+	 * @throws SQLException if the column count is unknown yet
+	 */
 	public Object[] append() throws SQLException {
 		if (data == null) {
 			data = new ArrayList<>();

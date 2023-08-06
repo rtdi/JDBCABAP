@@ -22,20 +22,43 @@ import io.rtdi.jdbcabap.parser.Constant;
 import io.rtdi.jdbcabap.parser.ProjectionColumn;
 import io.rtdi.jdbcabap.sql.SQL;
 
+/**
+ * Statement implementation for Abap
+ */
 public class AbapStatement implements Statement {
 
 	private AbapConnection connection;
 	private int querytimeout;
+	/**
+	 * The result set metadata 
+	 */
 	protected SQL sql;
 	private int maxrows;
+	/**
+	 * metadata about the procedure in case this is a procedure call
+	 */
 	protected AbapProcedure procedure;
+	/**
+	 * Current resultset in case there are multiple returned
+	 */
 	protected int resultsetindex;
 	private RowTransformation rowtransform;
 
+	/**
+	 * Create a new AbapStatement object
+	 * 
+	 * @param connection the statement belongs to
+	 */
 	AbapStatement(AbapConnection connection) {
 		this.connection = connection;
 	}
 
+	/**
+	 * Execute the query using RFC_READ_TABLE
+	 * 
+	 * @return the result set
+	 * @throws SQLException in case of any errors when reading the data from Abap
+	 */
 	protected AbapResultSet rfcReadTable() throws SQLException {
        try {
             JCoFunction function = connection.getJCoDestination().getRepository().getFunction("/BODS/RFC_READ_TABLE2");
@@ -140,6 +163,14 @@ public class AbapStatement implements Statement {
         }
  	}
 	
+	/**
+	 * Convert the input string to the native Java object holding the value for a given data type
+	 * 
+	 * @param inputstring as read from SAP
+	 * @param datatype of the column
+	 * @return the correct Java object for this data type
+	 * @throws SQLException in case the conversion fails
+	 */
 	public static Object convert(String inputstring, AbapDataType datatype) throws SQLException {
 		if (inputstring == null || inputstring.length() == 0) {
 			return null;
@@ -197,6 +228,16 @@ public class AbapStatement implements Statement {
 		}
 	}
 
+	/**
+	 * Redirects to sql.setDataType(pos, dt)
+	 * 
+	 * @param pos of the resultset
+	 * @param dt datatype of the column
+	 * @throws SQLException in case of an inconsistency between the data types and the value
+	 */
+	public void setDataType(int pos, AbapDataType dt) throws SQLException {
+		sql.setDataType(pos, dt);
+	}
 
 	@Override
 	public AbapResultSet executeQuery(String sqltext) throws SQLException {
@@ -204,7 +245,8 @@ public class AbapStatement implements Statement {
 		/*
 		 * Updating the metadata is required so that proper value conversions can happen, e.g. where DATS is null must be turned into a DATS = '00000000'
 		 */
-	   	AbapTableMetadata tablemetadata = AbapTableMetadata.get(sql.getTablename(), connection);
+		List<AbapTableMetadata> tablemetadata = new ArrayList<>();
+	   	tablemetadata.add(AbapTableMetadata.get(sql.getTablename(), connection));
     	sql.updateMetadata(tablemetadata);
 		return rfcReadTable();
 	}
@@ -428,10 +470,19 @@ public class AbapStatement implements Statement {
 		throw new SQLException("Not implemented");
 	}
 
+	/**
+	 * @return the RowTransformation used or null
+	 */
 	public RowTransformation getRowTransform() {
 		return rowtransform;
 	}
 
+	/**
+	 * Assign a RowTransformation to the result set, which is called after all values have been added - provides an
+	 * option to modify the values before returning them
+	 * 
+	 * @param rowtransform to be used
+	 */
 	public void setRowTransform(RowTransformation rowtransform) {
 		this.rowtransform = rowtransform;
 	}

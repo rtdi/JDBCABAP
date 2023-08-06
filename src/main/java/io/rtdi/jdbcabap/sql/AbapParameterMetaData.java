@@ -6,10 +6,17 @@ import java.util.List;
 
 import io.rtdi.jdbcabap.parser.Parameter;
 
+/**
+ * Required class for parameter metadata
+ */
 public class AbapParameterMetaData implements ParameterMetaData {
 
 	private List<Parameter> parameters;
 
+	/**
+	 * 
+	 * @param parameters of the statement
+	 */
 	public AbapParameterMetaData(List<Parameter> parameters) {
 		this.parameters = parameters;
 	}

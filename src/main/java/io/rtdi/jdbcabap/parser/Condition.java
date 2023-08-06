@@ -1,57 +1,8 @@
 package io.rtdi.jdbcabap.parser;
 
-import java.sql.SQLException;
-
-import io.rtdi.jdbcabap.AbapDataType;
-import io.rtdi.jdbcabap.AbapTableMetadata;
-
-public class Condition implements Expression, WithParent {
-	private ValueExpression left;
-	private Comparison op;
-	private ValueExpression right;
-	private WhereClause parent;
-
-	public Condition(WhereClause parent) {
-		this.parent = parent;
-	}
-
-	@Override
-	public WithParent getParent() {
-		return parent;
-	}
-
-	public void setOp(String text) {
-		op = Comparison.of(text);
-	}
-	
-	public void setLeft(ValueExpression e) {
-		this.left = e;
-	}
-	
-	public void setRight(ValueExpression e) {
-		this.right = e;
-	}
-
-	@Override
-	public String toString() {
-		return "" + left + op + right;
-	}
-
-	@Override
-	public void updateMetadata(AbapTableMetadata tablemetadata) throws SQLException {
-		if (left != null && right != null) {
-			left.updateMetadata(tablemetadata);
-			right.updateMetadata(tablemetadata);
-			AbapDataType datatype = left.getDatatype();
-			if (datatype != null) {
-				right.setDatatype(datatype);
-			} else {
-				datatype = right.getDatatype();
-				if (datatype != null) {
-					left.setDatatype(datatype);
-				}
-			}
-		}
-	}
+/**
+ * Any expression that return true/false
+ */
+public interface Condition extends Expression {
 
 }

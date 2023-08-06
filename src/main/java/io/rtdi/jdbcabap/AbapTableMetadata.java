@@ -11,6 +11,9 @@ import com.sap.conn.jco.JCoException;
 import com.sap.conn.jco.JCoFunction;
 import com.sap.conn.jco.JCoTable;
 
+/**
+ * Structure holding all information about a table
+ */
 public class AbapTableMetadata {
 	private Map<String, AbapColumn> columns = new HashMap<>();
 	private List<AbapColumn> columnlist = new ArrayList<>();
@@ -44,18 +47,37 @@ public class AbapTableMetadata {
 		}
 	}
 
+	/**
+	 * Returns the column of a named field
+	 * 
+	 * @param field is the name of the column to be returned
+	 * @return the AbapColumn with this name
+	 */
 	public AbapColumn getField(String field) {
 		return columns.get(field);
 	}
 	
+	/**
+	 * @return a list of all columns
+	 */
 	public List<AbapColumn> getFields() {
 		return columnlist;
 	}
 
+	/**
+	 * Provides the table metadata for a given table name using the specified connection
+	 * @param tablename to get
+	 * @param connection to use
+	 * @return AbapTableMetadata for this table
+	 * @throws SQLException if the metadata cannot be created, e.g. connection issues or table does not exist
+	 */
 	public static AbapTableMetadata get(String tablename, AbapConnection connection) throws SQLException {
 		return new AbapTableMetadata(tablename, connection);
 	}
 
+	/**
+	 * @return tablename of this table
+	 */
 	public String getTablename() {
 		return tablename;
 	}

@@ -1,11 +1,15 @@
 package io.rtdi.jdbcabap.parser;
 
 import java.sql.SQLException;
+import java.util.List;
 
 import io.rtdi.jdbcabap.AbapColumn;
 import io.rtdi.jdbcabap.AbapDataType;
 import io.rtdi.jdbcabap.AbapTableMetadata;
 
+/**
+ * A ValueExpression that maps 1:1 to a column
+ */
 public class ColumnExpression implements ValueExpression {
 	
 	private String columnname;
@@ -13,6 +17,9 @@ public class ColumnExpression implements ValueExpression {
 	private int scale;
 	private AbapDataType datatype;
 
+	/**
+	 * @param sourcecolumnname name of the table column
+	 */
 	public ColumnExpression(String sourcecolumnname) {
 		this.columnname = sourcecolumnname;
 	}
@@ -23,12 +30,18 @@ public class ColumnExpression implements ValueExpression {
 	}
 
 	@Override
-	public void updateMetadata(AbapTableMetadata tablemetadata) throws SQLException {
-		AbapColumn col = tablemetadata.getField(columnname);
-		if (col != null) {
-			setDatatype(col.getDatatype());
-		} else {
-			throw new SQLException(String.format("The column %s is not found in the table %s", columnname, tablemetadata.getTablename()));
+	public void updateMetadata(List<AbapTableMetadata> tablemetadata) throws SQLException {
+		boolean found = false;
+		for (AbapTableMetadata table : tablemetadata) {
+			AbapColumn col = table.getField(columnname);
+			if (col != null) {
+				setDatatype(col.getDatatype());
+				found = true;
+				break;
+			}
+		}
+		if (!found) {
+			throw new SQLException(String.format("The column %s is not found in the tables", columnname));
 		}
 	}
 
@@ -62,6 +75,9 @@ public class ColumnExpression implements ValueExpression {
 		return scale;
 	}
 
+	/**
+	 * @return the name of the column this expression points to
+	 */
 	public String getColumnname() {
 		return columnname;
 	}

@@ -23,6 +23,9 @@ import java.util.regex.Pattern;
 import com.sap.conn.jco.JCoDestination;
 import com.sap.conn.jco.JCoException;
 
+/**
+ * The Abap version of a Connection
+ */
 public class AbapConnection implements java.sql.Connection {
 	private final String jdbcpattern = "jdbc:abap:\\/\\/(([^\\:]+)\\\\:([^\\@]+)@)?([^\\:]+)\\:(\\d\\d)\\:(\\d\\d\\d)(\\:([a-zA-Z][a-zA-Z]))?(\\?.*)?";
 	private final Pattern pattern = Pattern.compile(jdbcpattern);
@@ -98,7 +101,7 @@ public class AbapConnection implements java.sql.Connection {
 	}
 
 	@Override
-	public PreparedStatement prepareStatement(String sql) throws SQLException {
+	public AbapPreparedStatement prepareStatement(String sql) throws SQLException {
 		return new AbapPreparedStatement(this, sql);
 	}
 
@@ -352,6 +355,10 @@ public class AbapConnection implements java.sql.Connection {
 		return false;
 	}
 
+	/**
+	 * @return the JCoDestination used by this connection
+	 * @throws SQLException in case the connection is in closed state
+	 */
 	public JCoDestination getJCoDestination() throws SQLException {
 		if (destination == null) {
 			throw new SQLException("Abap connection is closed");
@@ -359,10 +366,16 @@ public class AbapConnection implements java.sql.Connection {
 		return destination;
 	}
 
+	/**
+	 * @return the JdbcUrl of the connection as provided
+	 */
 	public String getJdbcUrl() {
 		return jdbcurl;
 	}
 
+	/**
+	 * @return username used by this connection
+	 */
 	public String getUsername() {
 		return username;
 	}

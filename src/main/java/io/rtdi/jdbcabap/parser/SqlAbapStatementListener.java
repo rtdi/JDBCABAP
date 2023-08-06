@@ -8,6 +8,7 @@ import java.util.List;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 
+import io.rtdi.jdbcabap.parser.AndOr.AndOrOp;
 import io.rtdi.jdbcabap.parser.antlr.SqlAbapBaseListener;
 import io.rtdi.jdbcabap.parser.antlr.SqlAbapParser.*;
 import io.rtdi.jdbcabap.sql.SQL;
@@ -159,13 +160,13 @@ public class SqlAbapStatementListener extends SqlAbapBaseListener {
 	@Override
 	public void enterWhereandorop(WhereandoropContext ctx) {
 		WhereClause current = (WhereClause) currentexpr;
-		current.addOperator(ctx.getText());
+		current.addOperator(AndOrOp.of(ctx.getText()));
 	}
 
 	@Override
 	public void enterWhereconditioncomp(WhereconditioncompContext ctx) {
 		WhereClause current = (WhereClause) currentexpr;
-		Condition c = new Condition(current);
+		ConditionExpression c = new ConditionExpression(current);
 		current.add(c);
 		currentexpr = c;
 	}
@@ -177,20 +178,20 @@ public class SqlAbapStatementListener extends SqlAbapBaseListener {
 
 	@Override
 	public void enterWhereop(WhereopContext ctx) {
-		Condition current = (Condition) currentexpr;
+		ConditionExpression current = (ConditionExpression) currentexpr;
 		current.setOp(ctx.getText());
 	}
 
 	@Override
 	public void enterWherecolumnnamel(WherecolumnnamelContext ctx) {
-		Condition current = (Condition) currentexpr;
+		ConditionExpression current = (ConditionExpression) currentexpr;
 		String name = getName(ctx);
 		current.setLeft(new ColumnExpression(name));
 	}
 
 	@Override
 	public void enterWherevaluel(WherevaluelContext ctx) {
-		Condition current = (Condition) currentexpr;
+		ConditionExpression current = (ConditionExpression) currentexpr;
 		String value = ctx.getText();
 		if ("?".equals(value)) {
 			Parameter p = new Parameter();
@@ -207,14 +208,14 @@ public class SqlAbapStatementListener extends SqlAbapBaseListener {
 
 	@Override
 	public void enterWherecolumnnamer(WherecolumnnamerContext ctx) {
-		Condition current = (Condition) currentexpr;
+		ConditionExpression current = (ConditionExpression) currentexpr;
 		String name = getName(ctx);
 		current.setRight(new ColumnExpression(name));
 	}
 
 	@Override
 	public void enterWherevaluer(WherevaluerContext ctx) {
-		Condition current = (Condition) currentexpr;
+		ConditionExpression current = (ConditionExpression) currentexpr;
 		String value = ctx.getText();
 		if ("?".equals(value)) {
 			Parameter p = new Parameter();
