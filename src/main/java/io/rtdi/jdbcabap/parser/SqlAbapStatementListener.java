@@ -13,6 +13,9 @@ import io.rtdi.jdbcabap.parser.antlr.SqlAbapBaseListener;
 import io.rtdi.jdbcabap.parser.antlr.SqlAbapParser.*;
 import io.rtdi.jdbcabap.sql.SQL;
 
+/**
+ * Antlr listener to assemble the SQL clause 
+ */
 public class SqlAbapStatementListener extends SqlAbapBaseListener {
 	private SQL sql;
 	private WhereClause whereclause;
@@ -20,6 +23,11 @@ public class SqlAbapStatementListener extends SqlAbapBaseListener {
 	private List<Parameter> parameters;
 	private int projectionpos;
 
+	/**
+	 * Parse the provided SQL
+	 * 
+	 * @param sql Expression to be compiled
+	 */
 	public SqlAbapStatementListener(SQL sql) {
 		this.sql = sql;
 	}
@@ -44,6 +52,11 @@ public class SqlAbapStatementListener extends SqlAbapBaseListener {
 		projectionpos = 0;
 	}
 	
+	/**
+	 * Get all parameters of the SQL
+	 * 
+	 * @return list of all parameters found in the SQL by order
+	 */
 	public List<Parameter> getParameters() {
 		return parameters;
 	}

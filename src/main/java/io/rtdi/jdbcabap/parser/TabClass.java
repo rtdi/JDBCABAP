@@ -5,19 +5,29 @@ package io.rtdi.jdbcabap.parser;
  */
 public enum TabClass {
 	
-	/*
-		TRANSP	Transparent table
-		INTTAB	Structure
-		CLUSTER	Cluster table
-		POOL	Pooled table
-		VIEW	Generated View Structure
-		APPEND	Append structure
+	/**
+	 * Transparent table
 	 */
 	TRANSP(JdbcTableTypes.TABLE),
+	/**
+	 * Structure
+	 */
 	INTTAB(JdbcTableTypes.TYPE),
+	/**
+	 * Cluster table
+	 */
 	CLUSTER(JdbcTableTypes.TABLE),
+	/**
+	 * Pooled table
+	 */
 	POOL(JdbcTableTypes.TABLE),
+	/**
+	 * Generated View Structure
+	 */
 	VIEW(JdbcTableTypes.VIEW),
+	/**
+	 * Append structure
+	 */
 	APPEND(JdbcTableTypes.TYPE);
 
 	private JdbcTableTypes type;

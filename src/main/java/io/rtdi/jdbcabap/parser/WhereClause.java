@@ -41,6 +41,11 @@ public class WhereClause implements Condition, WithParent {
 		}
 	}
 	
+	/**
+	 * Add another expression with this operand
+	 * 
+	 * @param op operand to use
+	 */
 	public void addOperator(AndOrOp op) {
 		if (right == null) {
 			right = new ArrayList<>();
