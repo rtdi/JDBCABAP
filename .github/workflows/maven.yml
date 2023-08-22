@@ -32,6 +32,7 @@ jobs:
       run: |
         export MVN_PROJECT_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
         echo "MVN_PROJECT_VERSION=$MVN_PROJECT_VERSION" >> $GITHUB_ENV
+        cp $GITHUB_WORKSPACE/lib/dep $GITHUB_WORKSPACE/lib/sapjco3.jar
         mvn -DskipTests=true --no-transfer-progress -s $GITHUB_WORKSPACE/settings.xml clean package 
     - name: Release Maven package
       uses: samuelmeuli/action-maven-publish@v1
