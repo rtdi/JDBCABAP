@@ -93,7 +93,7 @@ public class Constant implements ValueExpression {
 	}
 
 	private void setValue(String text) throws SQLException {
-		if (text == null) {
+		if (text == null || "null".equalsIgnoreCase(text)) {
 			value = null;
 		} else {
 			if (text.startsWith("'")) {

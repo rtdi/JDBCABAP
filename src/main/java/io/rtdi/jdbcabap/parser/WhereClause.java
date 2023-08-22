@@ -85,12 +85,14 @@ public class WhereClause implements Condition, WithParent {
 	public static String validateStringWithDatatype(AbapDataType dt, String value) throws SQLException {
 		if (dt == null) {
 			return value;
+		} else if ("null".equalsIgnoreCase(value)) {
+			value = null;
 		}
 		switch (dt) {
 		case C: return value;
 		case D:
 			if (value == null) {
-				return "00000000";
+				return "'00000000'";
 			} else if (value.matches("\\'[\\d]{8}\\'")) {
 				return value;
 			} else {
@@ -112,11 +114,11 @@ public class WhereClause implements Condition, WithParent {
 			} else if (value.matches("[\\d]+")) {
 				return value;
 			} else {
-				throw new SQLException(String.format("The required datatype is a date but the input string %s is not in the form 'yyyymmdd'", value));
+				throw new SQLException(String.format("The required datatype is an int but the input string %s is not a number", value));
 			}
 		case T:
 			if (value == null) {
-				return "000000";
+				return "'000000'";
 			} else if (value.matches("\\'[\\d]{6}\\'")) {
 				return value;
 			} else {
