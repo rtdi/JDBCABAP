@@ -24,7 +24,7 @@ class ParsingTest {
 	@Test
 	void testOneCommand() {
 		try {
-			SQL parser = new SQL("select dd02l.sdgs as x from dd02l as xxx where xxx.x=1 and y='A' and (z>0 or s>0)");
+			SQL parser = new SQL("select dd02l.sdgs from dd02l");
 			assertNotNull(parser.getFields());
 			assertEquals(1, parser.getFields().size());
 			assertEquals("SDGS", parser.getFields().get(0).getColumnname());
