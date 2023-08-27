@@ -42,7 +42,7 @@ jobs:
         prerelease: false
         automatic_release_tag: latest
         files: |
-          JDBCABAP/target/jdbcabap.jar
+          JDBCABAP/JDBCABAP/target/jdbcabap.jar
     - name: Release Maven package
       uses: samuelmeuli/action-maven-publish@v1
       with:
