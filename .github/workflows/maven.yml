@@ -34,6 +34,15 @@ jobs:
         echo "MVN_PROJECT_VERSION=$MVN_PROJECT_VERSION" >> $GITHUB_ENV
         cp $GITHUB_WORKSPACE/lib/dep $GITHUB_WORKSPACE/lib/sapjco3.jar
         mvn -DskipTests=true --no-transfer-progress -s $GITHUB_WORKSPACE/settings.xml clean package 
+    - name: Upload Release Asset
+      id: upload-release-asset 
+      uses: "marvinpinto/action-automatic-releases@latest"
+      with:
+        repo_token: "${{ secrets.GITHUB_TOKEN }}"
+        prerelease: false
+        automatic_release_tag: latest
+        files: |
+          JDBCABAP/target/jdbcabap.jar
     - name: Release Maven package
       uses: samuelmeuli/action-maven-publish@v1
       with:
