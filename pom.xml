@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>io.rtdi.sap</groupId>
 	<artifactId>jdbcabap</artifactId>
-	<version>0.4.1</version>
+	<version>0.4.2</version>
 	<name>${project.groupId}:${project.artifactId}</name>
 	<description>An oData service for databases</description>
 	<packaging>jar</packaging>
