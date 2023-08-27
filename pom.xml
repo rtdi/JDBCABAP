@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>io.rtdi.sap</groupId>
 	<artifactId>jdbcabap</artifactId>
-	<version>0.4.0</version>
+	<version>0.4.1</version>
 	<name>${project.groupId}:${project.artifactId}</name>
 	<description>An oData service for databases</description>
 	<packaging>jar</packaging>
@@ -51,12 +51,12 @@
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-assembly-plugin</artifactId>
-				<version>3.6.0</version>
+				<artifactId>maven-jar-plugin</artifactId>
+				<version>3.3.0</version>
 				<configuration>
-					<descriptors>
-						<descriptor>src/main/assembly/assembly.xml</descriptor>
-					</descriptors>
+					<includes>
+						<include>**/services/*</include>
+					</includes>
 				</configuration>
 			</plugin>
 			<plugin>
@@ -102,25 +102,25 @@
 				</executions>
 			</plugin>
 			<plugin>
-			      <groupId>org.apache.maven.plugins</groupId>
-			      <artifactId>maven-gpg-plugin</artifactId>
-			      <version>1.6</version>
-			      <executions>
-				  <execution>
-				      <id>sign-artifacts</id>
-				      <phase>verify</phase>
-				      <goals>
-					  <goal>sign</goal>
-				      </goals>
-				      <configuration>
-					  <!-- Prevent `gpg` from using pinentry programs -->
-					  <gpgArguments>
-					      <arg>--pinentry-mode</arg>
-					      <arg>loopback</arg>
-					  </gpgArguments>
-				      </configuration>
-				  </execution>
-			      </executions>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-gpg-plugin</artifactId>
+				<version>1.6</version>
+				<executions>
+					<execution>
+						<id>sign-artifacts</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>sign</goal>
+						</goals>
+						<configuration>
+							<!-- Prevent `gpg` from using pinentry programs -->
+							<gpgArguments>
+								<arg>--pinentry-mode</arg>
+								<arg>loopback</arg>
+							</gpgArguments>
+						</configuration>
+					</execution>
+				</executions>
 			</plugin>
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
